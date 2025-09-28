@@ -1,18 +1,27 @@
 [
   {
-    "team": "LA Rams",
-    "division": "NFC West"
+    "id": "rams", 
+    "title": "LA Rams",
+    "date": "2025-09-28",
+    "contentHtml": "<p>NFC West team profile</p>"
   },
   {
-    "team": "Las Vegas Raiders",
-    "division": "AFC West"
+    "id": "raiders",
+    "title": "Las Vegas Raiders",
+    "date": "2025-09-29",
+    "contentHtml": "<p>AFC West team profile</p>"
   },
   {
-    "team": "LA Chargers",
-    "division": "AFC West"
+    "id": "chargers",
+    "title": "LA Chargers",
+    "date": "2025-09-30",
+    "contentHtml": "<p>AFC West team profile</p>"
   },
   {
-    "team": "SF 49ers",
-    "division": "NFC West"
+    "id": "49ers",
+    "title": "SF 49ers",
+    "date": "2025-10-01",
+    "contentHtml": "<p>NFC West team profile</p>"
   }
 ]
+

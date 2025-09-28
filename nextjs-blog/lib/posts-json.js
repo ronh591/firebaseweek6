@@ -1,49 +1,59 @@
 import fs from 'fs';
 import path from 'path';
 
-// Path to the JSON file
-const postsFilePath = path.join(process.cwd(), 'data/posts.json');
+const postsFilePath = path.join(process.cwd(), 'data', 'posts.json');
 
-// Helper: read and parse JSON file
-function getPostsData() {
+/**
+ * Reads and parses the posts.json file
+ */
+function readPostsFile() {
   const fileContents = fs.readFileSync(postsFilePath, 'utf8');
   return JSON.parse(fileContents);
 }
 
-// Return all posts sorted alphabetically by team, including id (slug)
+/**
+ * Get all posts, sorted by date (newest first)
+ */
 export function getSortedPostsData() {
-  const allPosts = getPostsData();
+  const allPosts = readPostsFile();
 
   return allPosts
     .map((post) => ({
-      id: post.team.toLowerCase().replace(/\s+/g, '-'), // slug for dynamic routes
-      title: post.team,
-      date: post.division,
-      contentHtml: `<p>Division: ${post.division}</p>`,
+      id: post.id,
+      title: post.title,
+      date: post.date,
+      contentHtml: post.contentHtml,
     }))
-    .sort((a, b) => a.title.localeCompare(b.title));
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
-// Return array of objects with `params: { id }` for dynamic routes
+/**
+ * Get all post IDs in the format required by Next.js getStaticPaths
+ */
 export function getAllPostIds() {
-  const allPosts = getPostsData();
+  const allPosts = readPostsFile();
+
   return allPosts.map((post) => ({
-    params: { id: post.team.toLowerCase().replace(/\s+/g, '-') },
+    params: { id: post.id },
   }));
 }
 
-// Given an ID, return that single post
+/**
+ * Get a single post’s data by ID
+ */
 export function getPostData(id) {
-  const allPosts = getPostsData();
-  const post = allPosts.find(
-    (p) => p.team.toLowerCase().replace(/\s+/g, '-') === id
-  );
-  if (!post) return null;
+  const allPosts = readPostsFile();
+  const post = allPosts.find((p) => p.id === id);
+
+  if (!post) {
+    return null; // Gracefully handle missing ID
+  }
 
   return {
-    id,
-    title: post.team,
-    date: post.division,
-    contentHtml: `<p>Division: ${post.division}</p>`,
+    id: post.id,
+    title: post.title,
+    date: post.date,
+    contentHtml: post.contentHtml,
   };
 }
+
