@@ -4,6 +4,17 @@ import Head from 'next/head';
 import utilStyles from '../../styles/utils.module.css';
 
 export default function Post({ postData }) {
+  if (!postData) {
+    return (
+      <Layout>
+        <Head>
+          <title>Post Not Found</title>
+        </Head>
+        <p>Sorry, this post could not be found.</p>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <Head>
@@ -21,18 +32,28 @@ export default function Post({ postData }) {
 }
 
 export async function getStaticPaths() {
-  const paths = getAllPostIds();
-  return {
-    paths,
-    fallback: false,
-  };
+  try {
+    const paths = getAllPostIds();
+    return {
+      paths,
+      fallback: false,
+    };
+  } catch (error) {
+    console.error('Failed to get post paths in getStaticPaths:', error.message);
+    throw new Error(`Failed to generate post paths: ${error.message}`);
+  }
 }
 
 export async function getStaticProps({ params }) {
-  const postData = await getPostData(params.id);
-  return {
-    props: {
-      postData,
-    },
-  };
+  try {
+    const postData = await getPostData(params.id);
+    return {
+      props: {
+        postData,
+      },
+    };
+  } catch (error) {
+    console.error(`Failed to load post "${params.id}" in getStaticProps:`, error.message);
+    throw new Error(`Post page build failed for "${params.id}": ${error.message}`);
+  }
 }

@@ -16,23 +16,30 @@ import {
  * @returns {Promise<Array<Object>>} An array of post objects formatted for rendering.
  */
 export async function getSortedPostsData() {
-    const postsCollectionRef = collection(db, "posts");
-    const snapshot = await getDocs(postsCollectionRef);
+    let snapshot;
+    try {
+        const postsCollectionRef = collection(db, "posts");
+        snapshot = await getDocs(postsCollectionRef);
+    } catch (error) {
+        throw new Error(`Failed to fetch posts from Firestore: ${error.message}`);
+    }
     
-    // Map the documents, ensuring the critical 'id' field is created
     const postsData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        if (!data.title) {
+            console.warn(`Post document "${doc.id}" is missing a "title" field.`);
+        }
         return {
             id: doc.id,
-            ...doc.data() // Retrieves title, date, contentHtml, etc.
+            ...data
         };
     });
     
-    // Sort the data locally (e.g., by title)
     postsData.sort((a, b) => {
+        if (!a.title || !b.title) return 0;
         return a.title.localeCompare(b.title);
     });
     
-    // CRITICAL: Return the processed data
     return postsData;
 }
 
@@ -41,13 +48,18 @@ export async function getSortedPostsData() {
  * @returns {Promise<Array<Object>>} An array of objects in the format { params: { id: '...' } }.
  */
 export async function getAllPostIds() {
-    const postsCollectionRef = collection(db, "posts");
-    const snapshot = await getDocs(postsCollectionRef);
+    let snapshot;
+    try {
+        const postsCollectionRef = collection(db, "posts");
+        snapshot = await getDocs(postsCollectionRef);
+    } catch (error) {
+        throw new Error(`Failed to fetch post IDs from Firestore: ${error.message}`);
+    }
     
     return snapshot.docs.map(doc => {
         return {
             params: {
-                id: doc.id, // The Document ID is the unique slug for the URL
+                id: doc.id,
             },
         };
     });
@@ -56,27 +68,31 @@ export async function getAllPostIds() {
 /**
  * Fetches a single post document by its ID.
  * @param {string} id The unique Firestore Document ID of the post.
- * @returns {Promise<Object | null>} The formatted post object or null if not found.
+ * @returns {Promise<Object>} The formatted post object.
+ * @throws {Error} If the document is not found or Firestore fails.
  */
 export async function getPostData(id) {
-    // Get a reference to the specific document path: posts/{id}
-    const postDocRef = doc(db, "posts", id);
-    
-    // Fetch the document
-    const docSnap = await getDoc(postDocRef);
-
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        
-        // Return the formatted single post data (id, title, date, contentHtml)
-        return {
-            id: docSnap.id,
-            title: data.title,
-            date: data.date,
-            contentHtml: data.contentHtml,
-        };
-    } else {
-        // Handle case where the document ID is not found
-        return null;
+    if (!id) {
+        throw new Error('getPostData requires a non-empty post ID.');
     }
+
+    let docSnap;
+    try {
+        const postDocRef = doc(db, "posts", id);
+        docSnap = await getDoc(postDocRef);
+    } catch (error) {
+        throw new Error(`Failed to fetch post "${id}" from Firestore: ${error.message}`);
+    }
+
+    if (!docSnap.exists()) {
+        throw new Error(`Post with ID "${id}" not found in Firestore.`);
+    }
+
+    const data = docSnap.data();
+    return {
+        id: docSnap.id,
+        title: data.title,
+        date: data.date,
+        contentHtml: data.contentHtml,
+    };
 }

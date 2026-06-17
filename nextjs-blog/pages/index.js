@@ -37,10 +37,15 @@ export default function Home({ allPostsData }) {
 }
 
 export async function getStaticProps() {
-  const allPostsData = getSortedPostsData();
-  return {
-    props: {
-      allPostsData,
-    },
-  };
+  try {
+    const allPostsData = getSortedPostsData();
+    return {
+      props: {
+        allPostsData,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to load posts in getStaticProps:', error.message);
+    throw new Error(`Home page build failed: ${error.message}`);
+  }
 }
