@@ -5,10 +5,8 @@ import {
     getDocs, 
     getDoc,        // Needed for fetching single document
     doc,           // Needed for creating single document reference
-    query, 
-    where, 
-    documentId 
 } from 'firebase/firestore';
+import { sortPostsByDate, formatPostIds, formatPostData } from './post-utils';
 
 /**
  * Fetches all posts, maps the Document ID to the 'id' field, and sorts them.
@@ -19,21 +17,12 @@ export async function getSortedPostsData() {
     const postsCollectionRef = collection(db, "posts");
     const snapshot = await getDocs(postsCollectionRef);
     
-    // Map the documents, ensuring the critical 'id' field is created
-    const postsData = snapshot.docs.map(doc => {
-        return {
-            id: doc.id,
-            ...doc.data() // Retrieves title, date, contentHtml, etc.
-        };
-    });
+    const postsData = snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+    }));
     
-    // Sort the data locally (e.g., by title)
-    postsData.sort((a, b) => {
-        return a.title.localeCompare(b.title);
-    });
-    
-    // CRITICAL: Return the processed data
-    return postsData;
+    return sortPostsByDate(postsData.map(formatPostData));
 }
 
 /**
@@ -44,13 +33,8 @@ export async function getAllPostIds() {
     const postsCollectionRef = collection(db, "posts");
     const snapshot = await getDocs(postsCollectionRef);
     
-    return snapshot.docs.map(doc => {
-        return {
-            params: {
-                id: doc.id, // The Document ID is the unique slug for the URL
-            },
-        };
-    });
+    const posts = snapshot.docs.map(docSnap => ({ id: docSnap.id }));
+    return formatPostIds(posts);
 }
 
 /**
@@ -59,24 +43,13 @@ export async function getAllPostIds() {
  * @returns {Promise<Object | null>} The formatted post object or null if not found.
  */
 export async function getPostData(id) {
-    // Get a reference to the specific document path: posts/{id}
     const postDocRef = doc(db, "posts", id);
-    
-    // Fetch the document
     const docSnap = await getDoc(postDocRef);
 
     if (docSnap.exists()) {
         const data = docSnap.data();
-        
-        // Return the formatted single post data (id, title, date, contentHtml)
-        return {
-            id: docSnap.id,
-            title: data.title,
-            date: data.date,
-            contentHtml: data.contentHtml,
-        };
+        return formatPostData({ id: docSnap.id, ...data });
     } else {
-        // Handle case where the document ID is not found
         return null;
     }
 }

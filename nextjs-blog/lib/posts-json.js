@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { sortPostsByDate, formatPostIds, formatPostData } from './post-utils';
 
 const postsFilePath = path.join(process.cwd(), 'data', 'posts.json');
 
@@ -16,15 +17,7 @@ function readPostsFile() {
  */
 export function getSortedPostsData() {
   const allPosts = readPostsFile();
-
-  return allPosts
-    .map((post) => ({
-      id: post.id,
-      title: post.title,
-      date: post.date,
-      contentHtml: post.contentHtml,
-    }))
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  return sortPostsByDate(allPosts.map(formatPostData));
 }
 
 /**
@@ -32,28 +25,19 @@ export function getSortedPostsData() {
  */
 export function getAllPostIds() {
   const allPosts = readPostsFile();
-
-  return allPosts.map((post) => ({
-    params: { id: post.id },
-  }));
+  return formatPostIds(allPosts);
 }
 
 /**
- * Get a single post’s data by ID
+ * Get a single post's data by ID
  */
 export function getPostData(id) {
   const allPosts = readPostsFile();
   const post = allPosts.find((p) => p.id === id);
 
   if (!post) {
-    return null; // Gracefully handle missing ID
+    return null;
   }
 
-  return {
-    id: post.id,
-    title: post.title,
-    date: post.date,
-    contentHtml: post.contentHtml,
-  };
+  return formatPostData(post);
 }
-
