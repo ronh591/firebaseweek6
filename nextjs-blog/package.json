@@ -3,7 +3,9 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "date-fns": "^2.29.3",
@@ -16,5 +18,13 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "firebase": "^12.15.0",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
   }
 }
