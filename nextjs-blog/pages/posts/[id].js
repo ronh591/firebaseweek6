@@ -2,6 +2,7 @@ import Layout from '../../components/layout';
 import { getAllPostIds, getPostData } from '../../lib/posts-json';
 import Head from 'next/head';
 import utilStyles from '../../styles/utils.module.css';
+import { sanitize } from '../../lib/sanitize';
 
 export default function Post({ postData }) {
   return (
@@ -32,7 +33,10 @@ export async function getStaticProps({ params }) {
   const postData = await getPostData(params.id);
   return {
     props: {
-      postData,
+      postData: {
+        ...postData,
+        contentHtml: sanitize(postData.contentHtml),
+      },
     },
   };
 }
