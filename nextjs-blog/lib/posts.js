@@ -7,26 +7,40 @@ import html from 'remark-html';
 const postsDirectory = path.join(process.cwd(), 'posts');
 
 export function getSortedPostsData() {
-  // Get file names under /posts
-  const fileNames = fs.readdirSync(postsDirectory);
+  let fileNames;
+  try {
+    fileNames = fs.readdirSync(postsDirectory);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error(`Posts directory not found at ${postsDirectory}. Ensure the "posts" folder exists.`);
+    }
+    throw new Error(`Failed to read posts directory (${postsDirectory}): ${error.message}`);
+  }
+
   const allPostsData = fileNames.map((fileName) => {
-    // Remove ".md" from file name to get id
     const id = fileName.replace(/\.md$/, '');
-
-    // Read markdown file as string
     const fullPath = path.join(postsDirectory, fileName);
-    const fileContents = fs.readFileSync(fullPath, 'utf8');
 
-    // Use gray-matter to parse the post metadata section
-    const matterResult = matter(fileContents);
+    let fileContents;
+    try {
+      fileContents = fs.readFileSync(fullPath, 'utf8');
+    } catch (error) {
+      throw new Error(`Failed to read post file "${fullPath}": ${error.message}`);
+    }
 
-    // Combine the data with the id
+    let matterResult;
+    try {
+      matterResult = matter(fileContents);
+    } catch (error) {
+      throw new Error(`Failed to parse front matter in "${fullPath}": ${error.message}`);
+    }
+
     return {
       id,
       ...matterResult.data,
     };
   });
-  // Sort posts by date
+
   return allPostsData.sort((a, b) => {
     if (a.date < b.date) {
       return 1;
@@ -37,7 +51,16 @@ export function getSortedPostsData() {
 }
 
 export function getAllPostIds() {
-  const fileNames = fs.readdirSync(postsDirectory);
+  let fileNames;
+  try {
+    fileNames = fs.readdirSync(postsDirectory);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error(`Posts directory not found at ${postsDirectory}. Ensure the "posts" folder exists.`);
+    }
+    throw new Error(`Failed to read posts directory (${postsDirectory}): ${error.message}`);
+  }
+
   return fileNames.map((fileName) => {
     return {
       params: {
@@ -48,19 +71,39 @@ export function getAllPostIds() {
 }
 
 export async function getPostData(id) {
+  if (!id) {
+    throw new Error('getPostData requires a non-empty post ID.');
+  }
+
   const fullPath = path.join(postsDirectory, `${id}.md`);
-  const fileContents = fs.readFileSync(fullPath, 'utf8');
 
-  // Use gray-matter to parse the post metadata section
-  const matterResult = matter(fileContents);
+  let fileContents;
+  try {
+    fileContents = fs.readFileSync(fullPath, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error(`Post file not found: "${fullPath}". No post exists with ID "${id}".`);
+    }
+    throw new Error(`Failed to read post file "${fullPath}": ${error.message}`);
+  }
 
-  // Use remark to convert markdown into HTML string
-  const processedContent = await remark()
-    .use(html)
-    .process(matterResult.content);
-  const contentHtml = processedContent.toString();
+  let matterResult;
+  try {
+    matterResult = matter(fileContents);
+  } catch (error) {
+    throw new Error(`Failed to parse front matter for post "${id}": ${error.message}`);
+  }
 
-  // Combine the data with the id and contentHtml
+  let contentHtml;
+  try {
+    const processedContent = await remark()
+      .use(html)
+      .process(matterResult.content);
+    contentHtml = processedContent.toString();
+  } catch (error) {
+    throw new Error(`Failed to convert markdown to HTML for post "${id}": ${error.message}`);
+  }
+
   return {
     id,
     contentHtml,
